@@ -47,6 +47,10 @@ namespace ImageResizeWebApp.Controllers
                             using (Stream stream = formFile.OpenReadStream())
                             {
                                 isUploaded = await StorageHelper.UploadFileToStorage(stream, formFile.FileName, storageConfig);
+                                //parametro para não perder a qualidade no momento da compressão
+                                isUploaded2 = await StorageHelper.UploadFileToStorage(stream //carregando os dados da imagem
+                                            .Format(new WebPFormat()) //formato
+                                            .Quality(50), "comprimido " + formFile.FileName, storageConfig);
                             }
                         }
                     }
