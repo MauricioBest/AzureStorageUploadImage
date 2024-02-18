@@ -47,10 +47,6 @@ namespace ImageResizeWebApp.Controllers
                             using (Stream stream = formFile.OpenReadStream())
                             {
                                 isUploaded = await StorageHelper.UploadFileToStorage(stream, formFile.FileName, storageConfig);
-                                //parametro para não perder a qualidade no momento da compressão
-                                isUploaded2 = await StorageHelper.UploadFileToStorage(stream //carregando os dados da imagem
-                                            .Format(new WebPFormat()) //formato
-                                            .Quality(50), "comprimido " + formFile.FileName, storageConfig);
                             }
                         }
                     }
@@ -96,5 +92,118 @@ namespace ImageResizeWebApp.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
+
+        public static async Task SetBlobPropertiesAsync(BlobClient blob)
+        {
+            Console.WriteLine("Setting blob properties...");
+
+            try
+            {
+                // Get the existing properties
+                BlobProperties properties = await blob.GetPropertiesAsync();
+
+                BlobHttpHeaders headers = new BlobHttpHeaders
+                {
+                    // Set the MIME ContentType every time the properties 
+                    // are updated or the field will be cleared
+                    ContentType = "text/plain",
+                    ContentLanguage = "en-us",
+
+                    // Populate remaining headers with 
+                    // the pre-existing properties
+                    CacheControl = properties.CacheControl,
+                    ContentDisposition = properties.ContentDisposition,
+                    ContentEncoding = properties.ContentEncoding,
+                    ContentHash = properties.ContentHash
+                };
+
+                // Set the blob's properties.
+                await blob.SetHttpHeadersAsync(headers);
+            }
+            catch (RequestFailedException e)
+            {
+                Console.WriteLine($"HTTP error code {e.Status}: {e.ErrorCode}");
+                Console.WriteLine(e.Message);
+                Console.ReadLine();
+            }
+        }
+
+        private static async Task GetBlobPropertiesAsync(BlobClient blob)
+        {
+            try
+            {
+                // Get the blob properties
+                BlobProperties properties = await blob.GetPropertiesAsync();
+
+                // Display some of the blob's property values
+                Console.WriteLine($" ContentLanguage: {properties.ContentLanguage}");
+                Console.WriteLine($" ContentType: {properties.ContentType}");
+                Console.WriteLine($" CreatedOn: {properties.CreatedOn}");
+                Console.WriteLine($" LastModified: {properties.LastModified}");
+            }
+            catch (RequestFailedException e)
+            {
+                Console.WriteLine($"HTTP error code {e.Status}: {e.ErrorCode}");
+                Console.WriteLine(e.Message);
+                Console.ReadLine();
+            }
+        }
+
+
+
+        public static async Task AddBlobMetadataAsync(BlobClient blob)
+        {
+            Console.WriteLine("Adding blob metadata...");
+
+            try
+            {
+                IDictionary<string, string> metadata =
+                new Dictionary<string, string>();
+
+                // Add metadata to the dictionary by calling the Add method
+                metadata.Add("docType", "textDocuments");
+
+                // Add metadata to the dictionary by using key/value syntax
+                metadata["category"] = "guidance";
+
+                // Set the blob's metadata.
+                await blob.SetMetadataAsync(metadata);
+            }
+            catch (RequestFailedException e)
+            {
+                Console.WriteLine($"HTTP error code {e.Status}: {e.ErrorCode}");
+                Console.WriteLine(e.Message);
+                Console.ReadLine();
+            }
+        }
+        public static async Task ReadBlobMetadataAsync(BlobClient blob)
+        {
+            try
+            {
+                // Get the blob's properties and metadata.
+                BlobProperties properties = await blob.GetPropertiesAsync();
+
+                Console.WriteLine("Blob metadata:");
+
+                // Enumerate the blob's metadata.
+                foreach (var metadataItem in properties.Metadata)
+                {
+                    Console.WriteLine($"\tKey: {metadataItem.Key}");
+                    Console.WriteLine($"\tValue: {metadataItem.Value}");
+                }
+            }
+            catch (RequestFailedException e)
+            {
+                Console.WriteLine($"HTTP error code {e.Status}: {e.ErrorCode}");
+                Console.WriteLine(e.Message);
+                Console.ReadLine();
+            }
+        }
+
+
+
     }
+
+    
 }
